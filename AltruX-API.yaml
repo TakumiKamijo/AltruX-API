@@ -10,7 +10,7 @@ paths:
     get:
       tags:
         - health
-      summary: health check
+      summary: 健康状態
 
   /BMI:
     post:
@@ -30,4 +30,3 @@ paths:
         tags:
           - BMI
         summary: my weight
-    
