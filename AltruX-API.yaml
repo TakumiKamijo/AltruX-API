@@ -6,3 +6,7 @@ info:
 servers:
   - url: 'https'
 paths:
+  /health:
+    get:
+      summary:  健康状態
+      tags: [Auth]
