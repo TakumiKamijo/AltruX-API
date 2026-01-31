@@ -99,4 +99,3 @@ components:
         detail:
           type: string
           example: Table 'contracts' doesn't exist
-
