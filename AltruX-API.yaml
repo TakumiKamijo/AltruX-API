@@ -1,32 +1,204 @@
 openapi: 3.1.0
 info:
-  title: Title
+  title: AltruxApi
   description: Title
   version: 1.0.0
 servers:
-  - url: 'https'
-paths: 
-  /health:
-    get:
-      tags:
-        - health
-      summary: 健康状態
+  - url: 'https://api.altrux.co.jp'
 
-  /BMI:
-    post:
-      tags:
-        - BMI
-      deprecated: false
-      x-42c-no-authentication: false
-      x-42c-mtls: false
-      x-42c-sensitivity: 3
-      x-42c-weight-input: 80
-      x-42c-weight-output: 20
-      x-42c-weight-parameters: 50
-      x-42c-weight-requestBody: 50
+paths:
+  /kolconnect/dashboard/byservice:
+    get:
+      summary: サービス別契約状況取得
+      description:
+        指定したインフルエンサー（KOL）に紐づく、サービス別の契約状況とポイントブースト加入者数を取得する
+
+      parameters:
+        - name: kol_id
+          in: query
+          description: インフルエンサーID
+          required: true
+          schema:
+            type: integer
+            example: 1
+
+      responses:
+        "200":
+          description: 正常レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardByServiceResponse"
+
+        "400":
+          description: リクエスト不正（kol_id不正など）
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   
-  /BMI/weight:
-      get:
-        tags:
-          - BMI
-        summary: my weight
+  /kolconnect/analysis/summary:
+    get:
+      summary: 分析サマリー取得
+      description:
+        指定したKOLの加入状況サマリーを取得する。
+        累計加入者数、今月の新規・解約・純増、前月比、カテゴリ別内訳、Boost加入者数を返す。
+
+      parameters:
+        - name: kol_id
+          in: query
+          description: KOL ID
+          required: true
+          schema:
+            type: integer
+            example: 1
+
+      responses:
+        "200":
+          description: 正常レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisSummaryResponse"
+
+        "400":
+          description: リクエスト不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+components:
+  schemas:
+    DashboardByServiceResponse:
+      type: object
+      properties:
+        kol_id:
+          type: integer
+          example: 1
+        total_subscribers:
+          type: integer
+          description: active契約の総数
+          example: 25
+        boost_subscriber_count:
+          type: integer
+          description: ポイントブースト加入者数
+          example: 5
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceSummary"
+
+    ServiceSummary:
+      type: object
+      properties:
+        category:
+          type: string
+          description: サービス区分
+          example: mobile
+        subscribers:
+          type: integer
+          description: 契約者数（active）
+          example: 12
+        new_contracts:
+          type: integer
+          description: 当月新規契約数（過去30日）
+          example: 6
+        cancellations:
+          type: integer
+          description: 当月解約数（過去30日）
+          example: 1
+        share:
+          type: number
+          format: float
+          description: 全体に占める割合（％）
+          example: 48.0
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Database error
+        detail:
+          type: string
+          example: Table 'contracts' doesn't exist
+
+    AnalysisSummaryResponse:
+      type: object
+      properties:
+        kol_id:
+          type: integer
+          example: 1
+
+        total_subscribers:
+          type: integer
+          description: active契約の累計加入者数（customer重複排除）
+          example: 5
+
+        this_month:
+          $ref: "#/components/schemas/AnalysisMonthlyBlock"
+
+        boost_subscriber_count:
+          type: integer
+          description: Boostプラン加入者数
+          example: 5
+
+
+    AnalysisMonthlyBlock:
+      type: object
+      properties:
+        new_subscribers:
+          type: integer
+          example: 1
+
+        cancellations:
+          type: integer
+          example: 2
+
+        net_increase:
+          type: integer
+          example: -1
+
+        net_increase_mom_rate:
+          type:
+            - number
+            - "null"
+          example: -150.0
+
+        by_category:
+          $ref: "#/components/schemas/AnalysisCategoryBlock"
+
+
+    AnalysisCategoryBlock:
+      type: object
+      properties:
+        new:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            mobile: 1
+
+        cancel:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            mobile: 1
+            water: 1
