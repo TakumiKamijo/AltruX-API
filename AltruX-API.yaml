@@ -82,6 +82,46 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /kolconnect/analysis/services:
+     get:
+       summary: サービス分析サマリ取得
+       description: |
+          指定したKOLに紐づくサービス利用状況の分析データを取得する。
+          ・加入パターン
+          ・サービス組み合わせ
+          ・category別 normal / boost
+          ・category別チャーン率
+
+       parameters:
+          - name: kol_id
+            in: query
+            description: インフルエンサーID
+            required: true
+            schema:
+              type: integer
+              example: 1
+
+       responses:
+          "200":
+            description: 正常レスポンス
+            content:
+              application/json:
+               schema:
+                  $ref: "#/components/schemas/AnalysisServicesResponse"
+
+          "400":
+            description: パラメータ不正
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/ErrorResponse"
+
+          "500":
+            description: サーバーエラー
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/ErrorResponse"
 
 components:
   schemas:
@@ -202,3 +242,64 @@ components:
           example:
             mobile: 1
             water: 1
+  
+    AnalysisServicesResponse:
+      type: object
+      properties:
+        kol_id:
+          type: integer
+          example: 1
+
+        service_pattern:
+          type: object
+          properties:
+            single:
+              type: integer
+              example: 5
+            double:
+              type: integer
+              example: 2
+            triple_or_more:
+              type: integer
+              example: 1
+            by_count:
+              type: object
+              additionalProperties:
+                type: integer
+              example:
+                "1": 5
+                "2": 2
+                "3": 1
+
+        service_combinations:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            mobile: 3
+            mobile+internet: 2
+
+        service_category_counts:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              normal:
+                type: integer
+              boost:
+                type: integer
+          example:
+            mobile:
+              normal: 2
+              boost: 1
+
+        churn_rate:
+          type: object
+          additionalProperties:
+            type:
+              - number
+              - "null"
+          example:
+            mobile: 33.33
+            internet: 0.0
+
