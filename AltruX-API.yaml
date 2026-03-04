@@ -7,6 +7,43 @@ servers:
   - url: 'https://api.altrux.co.jp'
 
 paths:
+  /kolconnect/dashboard/summary:
+    get:
+      summary: "ダッシュボード数値取得"
+      description:
+        "指定したKOLのダッシュボードに表示する各種数値（総発行ポイント、アクティブ会員数、今月の成果、純増、前月比、継続率）を取得する。フロントエンドでは原則として計算処理を行わず、取得した数値を表示する。"
+
+      parameters:
+        - name: kol_id
+          in: query
+          description: "インフルエンサーID"
+          required: true
+          schema:
+            type: integer
+            example: 1
+
+      responses:
+        "200":
+          description: "正常レスポンス"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummaryResponse"
+
+        "400":
+          description: "リクエスト不正（kol_id不正など）"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: "サーバーエラー"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /kolconnect/dashboard/byservice:
     get:
       summary: サービス別契約状況取得
@@ -125,6 +162,74 @@ paths:
 
 components:
   schemas:
+    DashboardSummaryResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: kolconnect dashboard summary lambda ok
+        kol_id:
+          type: integer
+          example: 1
+        metrics:
+          $ref: "#/components/schemas/DashboardSummaryMetrics"
+        timestamp:
+          type: string
+          description: "レスポンス生成時刻（ISO 8601）"
+          example: "2026-03-04T12:00:00"
+    DashboardSummaryMetrics:
+      type: object
+      properties:
+        total_issued_points:
+          type: integer
+          description: "総発行ポイント（tx_type='issue'の合計）"
+          example: 12500
+        active_customers:
+          type: integer
+          description: "アクティブ会員数（status='active'の重複排除顧客数）"
+          example: 48
+        monthly_reward:
+          type: integer
+          description: "今月の成果金額（請求金額×KOLバック率の合計）"
+          example: 35000
+        net_increase:
+          $ref: "#/components/schemas/NetIncrease"
+        infrastructure_members:
+          $ref: "#/components/schemas/InfrastructureMembers"
+        retention_rate:
+          type: number
+          format: float
+          description: "継続率（1 - 当月解約数/月初アクティブ数）"
+          example: 0.9583
+    NetIncrease:
+      type: object
+      description: "今月の純増（新規・解約・差分）"
+      properties:
+        new:
+          type: integer
+          description: "今月の新規顧客数"
+          example: 5
+        churn:
+          type: integer
+          description: "今月の解約顧客数"
+          example: 2
+        total:
+          type: integer
+          description: "純増数（new - churn）"
+          example: 3
+    InfrastructureMembers:
+      type: object
+      description: "インフラ会員数（前月比）"
+      properties:
+        current:
+          type: integer
+          description: "現在のアクティブ会員数"
+          example: 48
+        prev_month_diff_rate:
+          type: number
+          format: float
+          description: "前月比率（(current - prev) / prev）"
+          example: 0.0435
     DashboardByServiceResponse:
       type: object
       properties:
