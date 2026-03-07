@@ -82,6 +82,121 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /kolconnect/analysis/arpu:
+    get:
+      summary: サービス別ARPU取得
+      description: |
+        指定したKOLに紐づくサービス別のARPU（ユーザー平均単価）を取得する。
+        基本料・オプション・従量課金の内訳を含む。
+        対象期間はAPIが呼ばれた月の当月分。
+
+      parameters:
+        - name: kol_id
+          in: query
+          description: インフルエンサーID
+          required: true
+          schema:
+            type: integer
+            example: 1
+
+      responses:
+        "200":
+          description: 正常レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArpuResponse"
+
+        "400":
+          description: リクエスト不正（kol_id不正など）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /kolconnect/analysis/plan-subscribers:
+    get:
+      summary: プラン別加入者数取得
+      description: |
+        指定したKOLに紐づくサービスカテゴリ・プラン別のアクティブ加入者数を取得する。
+        基本プラン（plan_type=base）の契約者を対象とする。
+
+      parameters:
+        - name: kol_id
+          in: query
+          description: インフルエンサーID
+          required: true
+          schema:
+            type: integer
+            example: 1
+
+      responses:
+        "200":
+          description: 正常レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanSubscribersResponse"
+
+        "400":
+          description: リクエスト不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /kolconnect/analysis/options:
+    get:
+      summary: カテゴリ別オプション内訳取得
+      description: |
+        指定したKOLに紐づくカテゴリ別のオプション加入状況を取得する。
+        基本契約者数に対するオプション加入率を含む。
+
+      parameters:
+        - name: kol_id
+          in: query
+          description: インフルエンサーID
+          required: true
+          schema:
+            type: integer
+            example: 1
+
+      responses:
+        "200":
+          description: 正常レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionBreakdownResponse"
+
+        "400":
+          description: リクエスト不正
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /kolconnect/analysis/services:
      get:
        summary: サービス分析サマリ取得
@@ -178,6 +293,144 @@ components:
         detail:
           type: string
           example: Table 'contracts' doesn't exist
+
+    ArpuResponse:
+      type: object
+      properties:
+        kol_id:
+          type: integer
+          example: 1
+        billing_month:
+          type: string
+          description: 対象請求月（YYYY-MM）
+          example: "2026-03"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArpuServiceDetail"
+
+    ArpuServiceDetail:
+      type: object
+      properties:
+        category:
+          type: string
+          description: サービスカテゴリ
+          example: mobile
+        base_customer_count:
+          type: integer
+          description: アクティブ基本契約ユーザー数（ARPU分母）
+          example: 3200
+        arpu_total:
+          type: integer
+          description: ARPU合計（円）
+          example: 2772
+        arpu_base:
+          type: integer
+          description: 基本料ARPU（円）
+          example: 2160
+        arpu_option:
+          type: integer
+          description: オプションARPU（円）
+          example: 432
+        arpu_payperuse:
+          type: integer
+          description: 従量課金ARPU（円）
+          example: 180
+
+    PlanSubscribersResponse:
+      type: object
+      properties:
+        kol_id:
+          type: integer
+          example: 1
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanSubscriberCategory"
+
+    PlanSubscriberCategory:
+      type: object
+      properties:
+        category:
+          type: string
+          description: サービスカテゴリ
+          example: mobile
+        total_subscribers:
+          type: integer
+          description: カテゴリ内の合計加入者数
+          example: 100
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanDetail"
+
+    PlanDetail:
+      type: object
+      properties:
+        plan_name:
+          type: string
+          description: プラン名
+          example: 3GBプラン
+        subscriber_count:
+          type: integer
+          description: 加入者数
+          example: 30
+        share:
+          type: number
+          format: float
+          description: カテゴリ内構成比（%）
+          example: 30.0
+
+    OptionBreakdownResponse:
+      type: object
+      properties:
+        kol_id:
+          type: integer
+          example: 1
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionCategory"
+
+    OptionCategory:
+      type: object
+      properties:
+        category:
+          type: string
+          description: サービスカテゴリ
+          example: mobile
+        total_base_subscribers:
+          type: integer
+          description: 基本契約の加入者数
+          example: 3200
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionDetail"
+
+    OptionDetail:
+      type: object
+      properties:
+        option_name:
+          type: string
+          description: オプション・従量課金プラン名
+          example: かけ放題
+        plan_type:
+          type: string
+          enum:
+            - option
+            - payperuse
+          description: プラン種別
+          example: option
+        subscriber_count:
+          type: integer
+          description: 加入者数
+          example: 2400
+        adoption_rate:
+          type: number
+          format: float
+          description: 加入率（%）= 加入者数 / 基本契約者数 × 100
+          example: 75.0
 
     AnalysisSummaryResponse:
       type: object
